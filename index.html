@@ -113,7 +113,7 @@
 
         const App = () => {
             // ステート管理
-            const [mode, setMode] = useState('password'); // 'password' or 'app'
+            const [mode, setMode] = useState('app'); // デフォルトを 'app' に変更
             const [data, setData] = useState({ passwords: [], apps: [] });
             
             const [searchTerm, setSearchTerm] = useState('');
