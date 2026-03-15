@@ -101,11 +101,13 @@
             { id: 'other', label: '🛠 その他' }
         ];
 
+        // 新しいアプリ管理のカテゴリ定義に変更
         const APP_CATEGORIES = [
             { id: 'all', label: 'すべて' },
-            { id: 'active', label: '🚀 稼働中' },
+            { id: 'active', label: '🚀 公開中' },
+            { id: 'testing', label: '👀 動作確認中' },
             { id: 'development', label: '🔨 開発中' },
-            { id: 'archive', label: '📦 アーカイブ' }
+            { id: 'planning', label: '💡 企画中' }
         ];
 
         const STORAGE_KEY = 'spc_integrated_manager_data';
@@ -748,7 +750,14 @@
                 }).catch(() => showToast('コピーに失敗しました'));
             };
 
-            const categoryInfo = APP_CATEGORIES.find(c => c.id === item.category) || APP_CATEGORIES[0];
+            let categoryInfo = APP_CATEGORIES.find(c => c.id === item.category);
+            
+            // 互換性対応: 過去に「アーカイブ」で登録していたデータが消えて見えなくならないようにする安全装置
+            if (!categoryInfo && item.category === 'archive') {
+                categoryInfo = { id: 'archive', label: '📦 アーカイブ' };
+            } else if (!categoryInfo) {
+                categoryInfo = APP_CATEGORIES[0]; // フォールバック
+            }
 
             // 展開されていない時のみドラッグ可能にする
             const isDraggable = canSort && !isExpanded;
@@ -770,7 +779,9 @@
 
                     <div className={`absolute top-0 left-0 w-full h-1 ${
                         item.category === 'active' ? 'bg-green-500' : 
-                        item.category === 'development' ? 'bg-orange-400' : 'bg-gray-400'
+                        item.category === 'testing' ? 'bg-yellow-400' : 
+                        item.category === 'development' ? 'bg-orange-400' : 
+                        item.category === 'planning' ? 'bg-pink-400' : 'bg-gray-400' // archiveなどはグレー
                     }`}></div>
 
                     <div 
