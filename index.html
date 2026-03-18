@@ -34,7 +34,7 @@
         ::-webkit-scrollbar-thumb { background: rgba(34, 174, 201, 0.5); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(2, 5, 98, 0.5); }
         
-        /* 横スクロールバーを隠すクラス（ここを追加） */
+        /* 横スクロールバーを隠すクラス */
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -91,6 +91,9 @@
         const IconKey = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>;
         const IconCode = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>;
         const IconGripVertical = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg>;
+        // 新規追加アイコン（ページネーション用）
+        const IconChevronLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>;
+        const IconChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>;
 
         // カテゴリ定義
         const PASSWORD_CATEGORIES = [
@@ -101,7 +104,6 @@
             { id: 'other', label: '🛠 その他' }
         ];
 
-        // 新しいアプリ管理のカテゴリ定義に変更
         const APP_CATEGORIES = [
             { id: 'all', label: 'すべて' },
             { id: 'active', label: '🚀 公開中' },
@@ -112,6 +114,9 @@
 
         const STORAGE_KEY = 'spc_integrated_manager_data';
         const OLD_STORAGE_KEY = 'spc_password_manager_data'; // 互換性のため
+
+        // 1ページあたりの表示件数
+        const ITEMS_PER_PAGE = 30;
 
         const App = () => {
             // ステート管理
@@ -127,10 +132,13 @@
             const [toastMessage, setToastMessage] = useState('');
             const fileInputRef = useRef(null);
 
-            // 【新規追加】カードの展開状態をすべて閉じる（リセットする）ためのトリガー
+            // ページネーション用ステート
+            const [currentPage, setCurrentPage] = useState(1);
+
+            // カードの展開状態をすべて閉じるためのトリガー
             const [resetTrigger, setResetTrigger] = useState(0);
 
-            // 独自のダイアログステート（iframeブロック対策）
+            // 独自のダイアログステート
             const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
 
             // ドラッグ＆ドロップ用ステート
@@ -153,7 +161,6 @@
                         }
                     }
                     
-                    // 新しいキーがない場合、旧パスワード管理のデータがあれば移行する
                     const oldSavedData = localStorage.getItem(OLD_STORAGE_KEY);
                     if (oldSavedData) {
                         try {
@@ -161,7 +168,6 @@
                             if (Array.isArray(oldPasswords)) {
                                 const newData = { passwords: oldPasswords, apps: [] };
                                 setData(newData);
-                                // 新しいキーで保存し直す
                                 localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
                             }
                         } catch (e) {
@@ -177,25 +183,30 @@
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
             }, [data]);
 
-            // モードが切り替わったらカテゴリと検索をリセット
+            // モードが切り替わったら状態をリセット
             useEffect(() => {
                 setCurrentCategory('all');
                 setSearchTerm('');
+                setCurrentPage(1); // ページを1に戻す
             }, [mode]);
+
+            // カテゴリや検索が変わったらページを1に戻す
+            useEffect(() => {
+                setCurrentPage(1);
+            }, [currentCategory, searchTerm]);
 
             // 並び替え可能な条件（「すべて」カテゴリかつ検索ワードなし）
             const canSort = currentCategory === 'all' && searchTerm === '';
 
-            // ドラッグ＆ドロップのハンドラー
-            const handleDragStart = (e, index) => {
-                setDragItemIndex(index);
+            // ドラッグ＆ドロップのハンドラー（ページネーションを考慮してグローバルインデックスを使用）
+            const handleDragStart = (e, globalIndex) => {
+                setDragItemIndex(globalIndex);
                 e.dataTransfer.effectAllowed = "move";
-                // Chrome等の仕様上、何らかのデータをセットする必要がある
-                e.dataTransfer.setData("text/plain", index);
+                e.dataTransfer.setData("text/plain", globalIndex);
             };
 
-            const handleDragEnter = (index) => {
-                setDragOverItemIndex(index);
+            const handleDragEnter = (globalIndex) => {
+                setDragOverItemIndex(globalIndex);
             };
 
             const handleDragEnd = () => {
@@ -214,7 +225,6 @@
                     const currentItems = mode === 'password' ? [...prevData.passwords] : [...prevData.apps];
                     const draggedItem = currentItems[dragItemIndex];
                     
-                    // アイテムの入れ替え
                     currentItems.splice(dragItemIndex, 1);
                     currentItems.splice(dragOverItemIndex, 0, draggedItem);
                     
@@ -226,24 +236,25 @@
                 handleDragEnd();
             };
 
-            // 各カードに渡すドラッグ関連のプロパティを生成する関数
-            const createDragProps = (index) => ({
-                onDragStart: (e) => handleDragStart(e, index),
-                onDragEnter: () => handleDragEnter(index),
-                onDragOver: (e) => { e.preventDefault(); },
-                onDragEnd: handleDragEnd,
-                onDrop: handleDrop,
-                isDragging: dragItemIndex === index,
-                isDragOver: dragOverItemIndex === index && dragItemIndex !== index,
-            });
+            // ドラッグ関連のプロパティを生成する関数（ローカルインデックスをグローバルインデックスに変換）
+            const createDragProps = (localIndex) => {
+                const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + localIndex;
+                return {
+                    onDragStart: (e) => handleDragStart(e, globalIndex),
+                    onDragEnter: () => handleDragEnter(globalIndex),
+                    onDragOver: (e) => { e.preventDefault(); },
+                    onDragEnd: handleDragEnd,
+                    onDrop: handleDrop,
+                    isDragging: dragItemIndex === globalIndex,
+                    isDragOver: dragOverItemIndex === globalIndex && dragItemIndex !== globalIndex,
+                };
+            };
 
-            // トースト通知を表示する関数
             const showToast = (msg) => {
                 setToastMessage(msg);
                 setTimeout(() => setToastMessage(''), 3000);
             };
 
-            // データの保存（パスワード）
             const handleSavePassword = (formData) => {
                 if (editingItem) {
                     const updatedPasswords = data.passwords.map(item => item.id === editingItem.id ? { ...formData, id: item.id, updatedAt: new Date().toISOString() } : item);
@@ -258,12 +269,12 @@
                     };
                     setData({ ...data, passwords: [newItem, ...data.passwords] });
                     showToast('追加しました');
+                    setCurrentPage(1); // 新規追加時は1ページ目に戻る
                 }
                 setIsPasswordModalOpen(false);
                 setEditingItem(null);
             };
 
-            // データの保存（アプリ）
             const handleSaveApp = (formData) => {
                 if (editingItem) {
                     const updatedApps = data.apps.map(item => item.id === editingItem.id ? { ...formData, id: item.id, updatedAt: new Date().toISOString() } : item);
@@ -278,12 +289,12 @@
                     };
                     setData({ ...data, apps: [newItem, ...data.apps] });
                     showToast('追加しました');
+                    setCurrentPage(1); // 新規追加時は1ページ目に戻る
                 }
                 setIsAppModalOpen(false);
                 setEditingItem(null);
             };
 
-            // データの削除
             const handleDelete = (id, targetMode) => {
                 showConfirm('本当にこの項目を削除しますか？', () => {
                     if (targetMode === 'password') {
@@ -295,7 +306,6 @@
                 });
             };
 
-            // 編集モードでモーダルを開く
             const openEditModal = (item) => {
                 setEditingItem(item);
                 if (mode === 'password') {
@@ -305,7 +315,6 @@
                 }
             };
 
-            // 新規追加モードでモーダルを開く
             const openAddModal = () => {
                 setEditingItem(null);
                 if (mode === 'password') {
@@ -315,7 +324,6 @@
                 }
             };
 
-            // データのバックアップ（エクスポート） - 統合データとして保存
             const handleExport = () => {
                 if (data.passwords.length === 0 && data.apps.length === 0) {
                     showAlert('バックアップするデータがありません。');
@@ -335,7 +343,6 @@
                 showToast('バックアップを保存しました');
             };
 
-            // データの復元（インポート）処理
             const handleImport = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -375,6 +382,7 @@
                                 return { passwords: newPasswords, apps: newApps };
                             });
                             showToast('データを復元しました');
+                            setCurrentPage(1); // 復元後に1ページ目に戻る
                         });
                     } catch (err) {
                         showAlert('ファイルの読み込みに失敗しました。正しいJSONファイルか確認してください。');
@@ -384,7 +392,7 @@
                 e.target.value = '';
             };
 
-            // 表示用データのフィルタリング処理
+            // 全データのフィルタリング
             const displayItems = useMemo(() => {
                 const sourceItems = mode === 'password' ? data.passwords : data.apps;
                 
@@ -408,6 +416,22 @@
                     return matchCategory && matchSearch;
                 });
             }, [data, mode, searchTerm, currentCategory]);
+
+            // 総ページ数の計算
+            const totalPages = Math.max(1, Math.ceil(displayItems.length / ITEMS_PER_PAGE));
+
+            // 削除などでアイテムが減り、現在のページが存在しなくなった場合の安全装置
+            useEffect(() => {
+                if (currentPage > totalPages) {
+                    setCurrentPage(totalPages);
+                }
+            }, [totalPages, currentPage]);
+
+            // 現在のページに表示するアイテム（30件分）だけを切り出す
+            const paginatedItems = useMemo(() => {
+                const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+                return displayItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+            }, [displayItems, currentPage]);
 
             const currentCategories = mode === 'password' ? PASSWORD_CATEGORIES : APP_CATEGORIES;
 
@@ -444,7 +468,7 @@
                                 <button
                                     onClick={() => {
                                         setMode('password');
-                                        setResetTrigger(prev => prev + 1); // 【追加】クリック時にすべてのカードを閉じる
+                                        setResetTrigger(prev => prev + 1);
                                     }}
                                     className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${
                                         mode === 'password' 
@@ -457,7 +481,7 @@
                                 <button
                                     onClick={() => {
                                         setMode('app');
-                                        setResetTrigger(prev => prev + 1); // 【追加】クリック時にすべてのカードを閉じる
+                                        setResetTrigger(prev => prev + 1);
                                     }}
                                     className={`flex-1 flex items-center justify-center py-3 px-4 rounded-lg font-bold text-sm transition-all duration-200 ${
                                         mode === 'app' 
@@ -469,7 +493,7 @@
                                 </button>
                             </div>
 
-                            {/* 検索バー（上に移動） */}
+                            {/* 検索バー */}
                             <div className="relative w-full md:w-72">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                                     <IconSearch />
@@ -484,7 +508,7 @@
                             </div>
                         </div>
 
-                        {/* カテゴリフィルタ（単独の行に変更） */}
+                        {/* カテゴリフィルタ */}
                         <div className="flex overflow-x-auto hide-scrollbar w-full space-x-2 pb-2 mb-4">
                             {currentCategories.map(cat => (
                                 <button
@@ -500,6 +524,29 @@
                                 </button>
                             ))}
                         </div>
+
+                        {/* ページネーション（アイテムが30個より多い場合のみ表示） */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center space-x-4 mb-4 animate-fade-in">
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className={`flex items-center px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${currentPage === 1 ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed' : `border-${mode === 'password' ? 'spc-navy' : 'spc-cyan'} text-${mode === 'password' ? 'spc-navy' : 'spc-cyan'} bg-white hover:bg-gray-50 shadow-sm`}`}
+                                >
+                                    <IconChevronLeft /> <span className="ml-1">前へ</span>
+                                </button>
+                                <div className="text-sm font-bold text-gray-600 bg-white px-4 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                                    {currentPage} <span className="text-gray-400 mx-1">/</span> {totalPages}
+                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className={`flex items-center px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors ${currentPage === totalPages ? 'border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed' : `border-${mode === 'password' ? 'spc-navy' : 'spc-cyan'} text-${mode === 'password' ? 'spc-navy' : 'spc-cyan'} bg-white hover:bg-gray-50 shadow-sm`}`}
+                                >
+                                    <span className="mr-1">次へ</span> <IconChevronRight />
+                                </button>
+                            </div>
+                        )}
                     </header>
 
                     {/* リスト表示領域 */}
@@ -516,7 +563,8 @@
                                 </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {displayItems.map((item, index) => (
+                                {/* displayItems ではなく paginatedItems（30件）を展開する */}
+                                {paginatedItems.map((item, index) => (
                                     mode === 'password' ? (
                                         <PasswordCard 
                                             key={`${item.id}-${resetTrigger}`} 
