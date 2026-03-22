@@ -135,8 +135,11 @@
             // ページネーション用ステート
             const [currentPage, setCurrentPage] = useState(1);
             
-            // 【新規追加】アプリ管理用の有料/無料 絞り込みフィルター
+            // アプリ管理用の有料/無料 絞り込みフィルター
             const [appPriceFilter, setAppPriceFilter] = useState('all'); // 'all', 'free', 'paid'
+            
+            // アプリ管理用の種類（仕事/PB）絞り込みフィルター
+            const [appTypeFilter, setAppTypeFilter] = useState('all'); // 'all', 'work', 'private'
 
             // カードの展開状態をすべて閉じるためのトリガー
             const [resetTrigger, setResetTrigger] = useState(0);
@@ -191,16 +194,17 @@
                 setCurrentCategory('all');
                 setSearchTerm('');
                 setCurrentPage(1); // ページを1に戻す
-                setAppPriceFilter('all'); // 【追加】フィルターもリセット
+                setAppPriceFilter('all');
+                setAppTypeFilter('all');
             }, [mode]);
 
             // カテゴリや検索、フィルターが変わったらページを1に戻す
             useEffect(() => {
                 setCurrentPage(1);
-            }, [currentCategory, searchTerm, appPriceFilter]);
+            }, [currentCategory, searchTerm, appPriceFilter, appTypeFilter]);
 
-            // 並び替え可能な条件（「すべて」カテゴリかつ検索ワードなし、かつ有料無料絞り込みなし）
-            const canSort = currentCategory === 'all' && searchTerm === '' && appPriceFilter === 'all';
+            // 並び替え可能な条件（「すべて」カテゴリかつ検索ワードなし、かつ各種絞り込みなし）
+            const canSort = currentCategory === 'all' && searchTerm === '' && appPriceFilter === 'all' && appTypeFilter === 'all';
 
             // ドラッグ＆ドロップのハンドラー（ページネーションを考慮してグローバルインデックスを使用）
             const handleDragStart = (e, globalIndex) => {
@@ -405,7 +409,8 @@
                     const searchLower = searchTerm.toLowerCase();
                     
                     let matchSearch = false;
-                    let matchAppPrice = true; // 【追加】有料/無料フィルター用の変数
+                    let matchAppPrice = true; 
+                    let matchAppType = true;
 
                     if (mode === 'password') {
                         matchSearch = 
@@ -419,15 +424,21 @@
                             (item.githubUrl && item.githubUrl.toLowerCase().includes(searchLower)) ||
                             (item.memo && item.memo.toLowerCase().includes(searchLower));
                             
-                        // 【追加】アプリ管理時の「有料/無料」フィルタリング（データが無い過去のものは'free'扱い）
+                        // アプリ管理時の「有料/無料」フィルタリング
                         if (appPriceFilter !== 'all') {
                             const itemPriceType = item.priceType || 'free';
                             matchAppPrice = itemPriceType === appPriceFilter;
                         }
+
+                        // アプリ管理時の「仕事/PB」フィルタリング
+                        if (appTypeFilter !== 'all') {
+                            const itemAppType = item.appType || 'work';
+                            matchAppType = itemAppType === appTypeFilter;
+                        }
                     }
-                    return matchCategory && matchSearch && matchAppPrice;
+                    return matchCategory && matchSearch && matchAppPrice && matchAppType;
                 });
-            }, [data, mode, searchTerm, currentCategory, appPriceFilter]);
+            }, [data, mode, searchTerm, currentCategory, appPriceFilter, appTypeFilter]);
 
             // 総ページ数の計算
             const totalPages = Math.max(1, Math.ceil(displayItems.length / ITEMS_PER_PAGE));
@@ -537,18 +548,34 @@
                             ))}
                         </div>
 
-                        {/* 【新規追加】アプリ管理モード時のみ表示される「無料/有料」サブフィルター */}
+                        {/* アプリ管理モード時のみ表示されるサブフィルター */}
                         {mode === 'app' && (
-                            <div className="flex space-x-2 mb-4 animate-fade-in ml-1">
-                                <button onClick={() => setAppPriceFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'all' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                    すべて
-                                </button>
-                                <button onClick={() => setAppPriceFilter('free')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'free' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                    🆓 無料
-                                </button>
-                                <button onClick={() => setAppPriceFilter('paid')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'paid' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                    💎 有料
-                                </button>
+                            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-4 animate-fade-in ml-1">
+                                {/* 有料/無料フィルター */}
+                                <div className="flex space-x-2">
+                                    <button onClick={() => setAppPriceFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'all' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        すべて
+                                    </button>
+                                    <button onClick={() => setAppPriceFilter('free')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'free' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🆓 無料
+                                    </button>
+                                    <button onClick={() => setAppPriceFilter('paid')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appPriceFilter === 'paid' ? 'bg-spc-cyan text-white border-spc-cyan shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        💎 有料
+                                    </button>
+                                </div>
+                                
+                                {/* 種類（仕事/PB）フィルター */}
+                                <div className="flex space-x-2">
+                                    <button onClick={() => setAppTypeFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'all' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        すべて
+                                    </button>
+                                    <button onClick={() => setAppTypeFilter('work')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'work' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        💼 仕事
+                                    </button>
+                                    <button onClick={() => setAppTypeFilter('private')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'private' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        ⛳️ PB
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -844,10 +871,15 @@
                 categoryInfo = APP_CATEGORIES[0]; // フォールバック
             }
 
-            // 【新規追加】有料/無料のバッジ情報（過去データで未設定の場合は無料扱い）
+            // 有料/無料のバッジ情報
             const priceTypeInfo = item.priceType === 'paid' 
                 ? { label: '💎 有料', color: 'bg-blue-50 text-blue-700 border-blue-200' } 
                 : { label: '🆓 無料', color: 'bg-green-50 text-green-700 border-green-200' };
+
+            // 種類（仕事/PB）のバッジ情報（過去データで未設定の場合は仕事扱い）
+            const appTypeInfo = item.appType === 'private'
+                ? { label: '⛳️ PB', color: 'bg-orange-50 text-orange-700 border-orange-200' }
+                : { label: '💼 仕事', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
 
             // 展開されていない時のみドラッグ可能にする
             const isDraggable = canSort && !isExpanded;
@@ -884,13 +916,17 @@
                             </div>
                         )}
                         <div className="flex-1 pr-4">
-                            <div className="flex items-center mb-2">
+                            <div className="flex items-center mb-2 flex-wrap gap-2">
                                 <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-md inline-block">
                                     {categoryInfo.label}
                                 </span>
-                                {/* 【新規追加】無料/有料バッジの表示 */}
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ml-2 ${priceTypeInfo.color}`}>
+                                {/* 無料/有料バッジ */}
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${priceTypeInfo.color}`}>
                                     {priceTypeInfo.label}
+                                </span>
+                                {/* 仕事/PBバッジ */}
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${appTypeInfo.color}`}>
+                                    {appTypeInfo.label}
                                 </span>
                             </div>
                             <h3 className="text-lg font-bold text-gray-800 leading-tight">
@@ -978,7 +1014,7 @@
                                     </div>
                                 )}
 
-                                {/* --- 新規追加：価格情報 --- */}
+                                {/* --- 価格情報 --- */}
                                 {(item.monthlyPrice || item.buyoutPrice) && (
                                     <div className="border-t border-gray-100 pt-3 flex gap-6">
                                         {item.monthlyPrice && (
@@ -996,7 +1032,7 @@
                                     </div>
                                 )}
 
-                                {/* --- 新規追加：アプリ用パスワード情報 --- */}
+                                {/* --- アプリ用パスワード情報 --- */}
                                 {item.appPassword && (
                                     <div className="border-t border-gray-100 pt-3">
                                         <div className="text-xs text-gray-500 mb-0.5 flex items-center font-bold">
@@ -1034,7 +1070,7 @@
                                 </div>
                             )}
 
-                            {/* SNS投稿状況（過去データでも常に表示するように修正） */}
+                            {/* SNS投稿状況 */}
                             <div className="mt-4 bg-white p-3.5 rounded-lg border border-gray-100 shadow-sm">
                                 <div className="text-xs font-bold text-gray-600 mb-2 flex items-center">📢 SNS連携・投稿状況</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1157,7 +1193,8 @@
 
             const [formData, setFormData] = useState({
                 title: '', category: 'active', 
-                priceType: 'free', // 【新規追加】 'free' または 'paid'
+                priceType: 'free', 
+                appType: 'work', 
                 localHtml: '', githubUrl: '', workersUrl: '', apiInfo: '', stripeUrl: '', 
                 monthlyPrice: '', buyoutPrice: '', 
                 appPassword: '', 
@@ -1182,7 +1219,8 @@
 
                     setFormData({
                         ...item,
-                        priceType: item.priceType || 'free', // 【新規追加】既存のデータに対応（無い場合は無料）
+                        priceType: item.priceType || 'free', 
+                        appType: item.appType || 'work',
                         appPassword: item.appPassword || '', 
                         thumbnail: item.thumbnail || '', 
                         socialPosts: mergedSocialPosts
@@ -1298,32 +1336,62 @@
                                 </div>
                             </div>
 
-                            {/* --- 【新規追加】提供形態（有料・無料）の選択 --- */}
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">提供形態</label>
-                                <div className="flex space-x-6">
-                                    <label className="flex items-center cursor-pointer">
-                                        <input 
-                                            type="radio" 
-                                            name="priceType" 
-                                            value="free" 
-                                            checked={formData.priceType === 'free'} 
-                                            onChange={handleChange} 
-                                            className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
-                                        />
-                                        <span className="ml-2 text-sm text-gray-700 font-medium">🆓 無料アプリ</span>
-                                    </label>
-                                    <label className="flex items-center cursor-pointer">
-                                        <input 
-                                            type="radio" 
-                                            name="priceType" 
-                                            value="paid" 
-                                            checked={formData.priceType === 'paid'} 
-                                            onChange={handleChange} 
-                                            className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
-                                        />
-                                        <span className="ml-2 text-sm text-gray-700 font-medium">💎 有料アプリ</span>
-                                    </label>
+                            {/* --- 提供形態と種類の選択 --- */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">提供形態</label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="priceType" 
+                                                value="free" 
+                                                checked={formData.priceType === 'free'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🆓 無料</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="priceType" 
+                                                value="paid" 
+                                                checked={formData.priceType === 'paid'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">💎 有料</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">種類</label>
+                                    <div className="flex space-x-4">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="appType" 
+                                                value="work" 
+                                                checked={formData.appType === 'work'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">💼 仕事</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="appType" 
+                                                value="private" 
+                                                checked={formData.appType === 'private'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ PB</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -1363,7 +1431,7 @@
                                 </div>
                             </div>
 
-                            {/* --- 新規追加：アプリ用パスワード入力欄 --- */}
+                            {/* --- アプリ用パスワード入力欄 --- */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">🔒 アプリ用パスワード</label>
                                 <input 
@@ -1414,7 +1482,7 @@
                                 </div>
                             </div>
 
-                            {/* --- 新規追加：SNS投稿管理 --- */}
+                            {/* --- SNS投稿管理 --- */}
                             <div className="pt-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">📢 SNS連携・投稿状況</label>
                                 <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
