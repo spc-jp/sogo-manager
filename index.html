@@ -136,10 +136,10 @@
             const [currentPage, setCurrentPage] = useState(1);
             
             // アプリ管理用の有料/無料 絞り込みフィルター
-            const [appPriceFilter, setAppPriceFilter] = useState('all'); // 'all', 'free', 'paid'
+            const [appPriceFilter, setAppPriceFilter] = useState('all'); 
             
-            // アプリ管理用の種類（仕事/PB）絞り込みフィルター
-            const [appTypeFilter, setAppTypeFilter] = useState('all'); // 'all', 'work', 'private'
+            // アプリ管理用の種類（販売用/お客様専用/PB）絞り込みフィルター
+            const [appTypeFilter, setAppTypeFilter] = useState('all'); // 'all', 'sales', 'client', 'private', 'work'(旧データ互換用)
 
             // カードの展開状態をすべて閉じるためのトリガー
             const [resetTrigger, setResetTrigger] = useState(0);
@@ -330,8 +330,8 @@
                         { label: 'ID(変更不可)', value: i => i.id },
                         { label: 'タイトル', value: i => i.title },
                         { label: 'ステータス', value: i => i.category },
-                        { label: '提供形態(free/paid)', value: i => i.priceType || 'free' },
-                        { label: '種類(work/private)', value: i => i.appType || 'work' },
+                        { label: '提供形態(free/paid...)', value: i => i.priceType || 'free' },
+                        { label: '種類(sales/client/private/work)', value: i => i.appType || 'work' },
                         { label: 'ローカルHTMLパス', value: i => i.localHtml },
                         { label: 'GitHub URL', value: i => i.githubUrl },
                         { label: 'Workers URL', value: i => i.workersUrl },
@@ -400,7 +400,8 @@
                             } else {
                                 return {
                                     id: row[0], title: row[1] || '', category: row[2] || 'planning', priceType: row[3] || 'free',
-                                    appType: row[4] || 'work', localHtml: row[5] || '', githubUrl: row[6] || '', workersUrl: row[7] || '',
+                                    appType: row[4] || 'sales', // 新規作成時はデフォルトで sales になるよう設定
+                                    localHtml: row[5] || '', githubUrl: row[6] || '', workersUrl: row[7] || '',
                                     apiInfo: row[8] || '', faviconOgpSet: row[9] === 'TRUE', stripeUrl: row[10] || '', stripeThanksUrl: row[11] || '',
                                     monthlyPrice: row[12] || '', buyoutPrice: row[13] || '', appPassword: row[14] || '', concept: row[15] || '', memo: row[16] || '',
                                     socialPosts: {
@@ -548,6 +549,8 @@
                             } else if (appPriceFilter === 'paid') {
                                 // 'paid' で始まるものはすべて有料として扱う（過去の 'paid' も含む）
                                 matchAppPrice = itemPriceType.startsWith('paid');
+                            } else {
+                                matchAppPrice = itemPriceType === appPriceFilter;
                             }
                         }
 
@@ -588,7 +591,7 @@
                             </div>
                             
                             <div className="flex flex-col items-end space-y-2 w-full md:w-auto">
-                                {/* Excel(CSV) 一括出力・取込機能（JSONバックアップを置き換え） */}
+                                {/* Excel(CSV) 一括出力・取込機能 */}
                                 <div className="flex space-x-2 justify-center md:justify-end w-full">
                                     <button onClick={handleExportCSV} className="flex items-center text-sm px-4 py-2 bg-spc-navy text-white rounded-md hover:bg-blue-900 transition-colors shadow-md font-bold" title="現在のタブをExcel(CSV)で出力して一括編集">
                                         <IconFileText /><span className="ml-1.5">Excel(CSV) 出力</span>
@@ -693,12 +696,20 @@
                                     <button onClick={() => setAppTypeFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'all' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
                                         すべて
                                     </button>
-                                    <button onClick={() => setAppTypeFilter('work')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'work' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        💼 仕事
+                                    <button onClick={() => setAppTypeFilter('sales')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'sales' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🛒 販売用
+                                    </button>
+                                    <button onClick={() => setAppTypeFilter('client')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'client' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🤝 お客様専用
                                     </button>
                                     <button onClick={() => setAppTypeFilter('private')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'private' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        ⛳️ PB
+                                        ⛳️ PB用
                                     </button>
+                                    {data.apps.some(app => (app.appType || 'work') === 'work') && (
+                                        <button onClick={() => setAppTypeFilter('work')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'work' ? 'bg-gray-500 text-white border-gray-500 shadow-sm' : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}`}>
+                                            💼 仕事(旧)
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -994,9 +1005,17 @@
             };
             const priceTypeInfo = getPriceTypeInfo(item.priceType);
 
-            const appTypeInfo = item.appType === 'private'
-                ? { label: '⛳️ PB', color: 'bg-orange-50 text-orange-700 border-orange-200' }
-                : { label: '💼 仕事', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+            // 【新規追加】種類（販売用/お客様専用/PB）のバッジ情報
+            const getAppTypeInfo = (type) => {
+                switch(type) {
+                    case 'sales': return { label: '🛒 販売用', color: 'bg-pink-50 text-pink-700 border-pink-200' };
+                    case 'client': return { label: '🤝 お客様専用', color: 'bg-teal-50 text-teal-700 border-teal-200' };
+                    case 'private': return { label: '⛳️ PB用', color: 'bg-orange-50 text-orange-700 border-orange-200' };
+                    case 'work': 
+                    default: return { label: '💼 仕事(旧)', color: 'bg-gray-50 text-gray-700 border-gray-200' }; // 過去データ互換用
+                }
+            };
+            const appTypeInfo = getAppTypeInfo(item.appType || 'work');
 
             const isDraggable = canSort && !isExpanded;
 
@@ -1321,7 +1340,7 @@
             const [formData, setFormData] = useState({
                 title: '', category: 'active', 
                 priceType: 'free', 
-                appType: 'work', 
+                appType: 'sales', // 【変更】新規追加のデフォルトは「販売用」に
                 localHtml: '', githubUrl: '', workersUrl: '', apiInfo: '', 
                 faviconOgpSet: false,
                 stripeUrl: '', 
@@ -1348,7 +1367,7 @@
                     setFormData({
                         ...item,
                         priceType: item.priceType || 'free', 
-                        appType: item.appType || 'work',
+                        appType: item.appType || 'work', // 【維持】過去のデータはそのまま読み込む
                         faviconOgpSet: item.faviconOgpSet || false,
                         appPassword: item.appPassword || '', 
                         stripeThanksUrl: item.stripeThanksUrl || '', 
@@ -1376,13 +1395,11 @@
                 }));
             };
 
-            // 【新規追加】APIキーの定型文挿入ハンドラー
             const handleApiKeyInsert = (e) => {
                 const selectedKey = e.target.value;
                 if (!selectedKey) return;
                 
                 const currentApiInfo = formData.apiInfo || '';
-                // すでに文字が入っていて、最後が改行でなければ改行を追加する
                 const prefix = currentApiInfo && !currentApiInfo.endsWith('\n') ? '\n' : '';
                 
                 setFormData({
@@ -1390,7 +1407,7 @@
                     apiInfo: currentApiInfo + prefix + selectedKey + '='
                 });
                 
-                e.target.value = ''; // 選択をリセットして何度でも選べるようにする
+                e.target.value = ''; 
             };
 
             const handleSubmit = (e) => {
@@ -1474,7 +1491,6 @@
                                             />
                                             <span className="ml-1.5 text-sm text-gray-700 font-medium">無料</span>
                                         </label>
-                                        {/* 過去データを開いた時用のフォールバック */}
                                         {formData.priceType === 'paid' && (
                                             <label className="flex items-center cursor-pointer">
                                                 <input 
@@ -1493,17 +1509,28 @@
 
                                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">種類</label>
-                                    <div className="flex space-x-4">
+                                    <div className="flex flex-wrap gap-4">
                                         <label className="flex items-center cursor-pointer">
                                             <input 
                                                 type="radio" 
                                                 name="appType" 
-                                                value="work" 
-                                                checked={formData.appType === 'work'} 
+                                                value="sales" 
+                                                checked={formData.appType === 'sales'} 
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">💼 仕事</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🛒 販売用</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="appType" 
+                                                value="client" 
+                                                checked={formData.appType === 'client'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🤝 お客様専用</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input 
@@ -1514,8 +1541,22 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ PB</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ PB用</span>
                                         </label>
+                                        {/* 過去データ互換用 */}
+                                        {formData.appType === 'work' && (
+                                            <label className="flex items-center cursor-pointer">
+                                                <input 
+                                                    type="radio" 
+                                                    name="appType" 
+                                                    value="work" 
+                                                    checked={formData.appType === 'work'} 
+                                                    onChange={handleChange} 
+                                                    className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                                />
+                                                <span className="ml-1.5 text-sm text-gray-700 font-medium text-gray-400">💼 仕事（旧）</span>
+                                            </label>
+                                        )}
                                     </div>
                                 </div>
                             </div>
