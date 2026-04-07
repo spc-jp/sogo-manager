@@ -147,9 +147,9 @@
             // 独自のダイアログステート
             const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
 
-            // ドラッグ＆ドロップ用ステート
-            const [dragItemIndex, setDragItemIndex] = useState(null);
-            const [dragOverItemIndex, setDragOverItemIndex] = useState(null);
+            // ドラッグ＆ドロップ用ステート（インデックスではなく、正確なIDを使用するように変更）
+            const [dragItemId, setDragItemId] = useState(null);
+            const [dragOverItemId, setDragOverItemId] = useState(null);
 
             const showAlert = (message) => setDialog({ isOpen: true, type: 'alert', message, onConfirm: null });
             const showConfirm = (message, onConfirm) => setDialog({ isOpen: true, type: 'confirm', message, onConfirm });
@@ -203,37 +203,44 @@
                 setCurrentPage(1);
             }, [currentCategory, searchTerm, appPriceFilter, appTypeFilter]);
 
-            const canSort = currentCategory === 'all' && searchTerm === '' && appPriceFilter === 'all' && appTypeFilter === 'all';
+            // 【変更】並び替え可能な条件（検索ワードが空の時であれば、どのタブ・フィルターでも移動可能にする）
+            const canSort = searchTerm === '';
 
-            // ドラッグ＆ドロップのハンドラー
-            const handleDragStart = (e, globalIndex) => {
-                setDragItemIndex(globalIndex);
+            // ドラッグ＆ドロップのハンドラー（IDを使って大元のデータを正確に入れ替える）
+            const handleDragStart = (e, id) => {
+                setDragItemId(id);
                 e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", globalIndex);
+                e.dataTransfer.setData("text/plain", id);
             };
 
-            const handleDragEnter = (globalIndex) => {
-                setDragOverItemIndex(globalIndex);
+            const handleDragEnter = (id) => {
+                setDragOverItemId(id);
             };
 
             const handleDragEnd = () => {
-                setDragItemIndex(null);
-                setDragOverItemIndex(null);
+                setDragItemId(null);
+                setDragOverItemId(null);
             };
 
             const handleDrop = (e) => {
                 e.preventDefault();
-                if (dragItemIndex === null || dragOverItemIndex === null || dragItemIndex === dragOverItemIndex) {
+                if (!dragItemId || !dragOverItemId || dragItemId === dragOverItemId) {
                     handleDragEnd();
                     return;
                 }
 
                 setData(prevData => {
                     const currentItems = mode === 'password' ? [...prevData.passwords] : [...prevData.apps];
-                    const draggedItem = currentItems[dragItemIndex];
                     
-                    currentItems.splice(dragItemIndex, 1);
-                    currentItems.splice(dragOverItemIndex, 0, draggedItem);
+                    // IDから元の配列内の正確な位置を探し出す
+                    const fromIndex = currentItems.findIndex(item => item.id === dragItemId);
+                    const toIndex = currentItems.findIndex(item => item.id === dragOverItemId);
+
+                    if (fromIndex === -1 || toIndex === -1) return prevData;
+
+                    const draggedItem = currentItems[fromIndex];
+                    currentItems.splice(fromIndex, 1);
+                    currentItems.splice(toIndex, 0, draggedItem);
                     
                     return mode === 'password' 
                         ? { ...prevData, passwords: currentItems }
@@ -243,16 +250,16 @@
                 handleDragEnd();
             };
 
-            const createDragProps = (localIndex) => {
-                const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + localIndex;
+            // ドラッグ関連のプロパティを生成する関数
+            const createDragProps = (item) => {
                 return {
-                    onDragStart: (e) => handleDragStart(e, globalIndex),
-                    onDragEnter: () => handleDragEnter(globalIndex),
+                    onDragStart: (e) => handleDragStart(e, item.id),
+                    onDragEnter: () => handleDragEnter(item.id),
                     onDragOver: (e) => { e.preventDefault(); },
                     onDragEnd: handleDragEnd,
                     onDrop: handleDrop,
-                    isDragging: dragItemIndex === globalIndex,
-                    isDragOver: dragOverItemIndex === globalIndex && dragItemIndex !== globalIndex,
+                    isDragging: dragItemId === item.id,
+                    isDragOver: dragOverItemId === item.id && dragItemId !== item.id,
                 };
             };
 
@@ -751,7 +758,7 @@
                                 </div>
                             )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {paginatedItems.map((item, index) => (
+                                {paginatedItems.map((item) => (
                                     mode === 'password' ? (
                                         <PasswordCard 
                                             key={`${item.id}-${resetTrigger}`} 
@@ -760,7 +767,7 @@
                                             onDelete={() => handleDelete(item.id, 'password')}
                                             showToast={showToast}
                                             canSort={canSort}
-                                            dragProps={canSort ? createDragProps(index) : {}}
+                                            dragProps={canSort ? createDragProps(item) : {}}
                                         />
                                     ) : (
                                         <AppCard 
@@ -770,7 +777,7 @@
                                             onDelete={() => handleDelete(item.id, 'app')}
                                             showToast={showToast}
                                             canSort={canSort}
-                                            dragProps={canSort ? createDragProps(index) : {}}
+                                            dragProps={canSort ? createDragProps(item) : {}}
                                         />
                                     )
                                 ))}
