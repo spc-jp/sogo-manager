@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPC 統合マネージャー</title>
-    <!-- Tailwind CSS -->
+    
+    <link rel="icon" href="https://spc-jp.github.io/sogo-manager/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://spc-jp.github.io/sogo-manager/favicon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         /* カスタムフォントと背景 */
@@ -139,7 +140,7 @@
             const [appPriceFilter, setAppPriceFilter] = useState('all'); 
             
             // アプリ管理用の種類（販売用/お客様専用/PB）絞り込みフィルター
-            const [appTypeFilter, setAppTypeFilter] = useState('all'); // 'all', 'sales', 'client', 'private', 'work'(旧データ互換用)
+            const [appTypeFilter, setAppTypeFilter] = useState('all'); 
 
             // カードの展開状態をすべて閉じるためのトリガー
             const [resetTrigger, setResetTrigger] = useState(0);
@@ -147,7 +148,7 @@
             // 独自のダイアログステート
             const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
 
-            // ドラッグ＆ドロップ用ステート（インデックスではなく、正確なIDを使用するように変更）
+            // ドラッグ＆ドロップ用ステート
             const [dragItemId, setDragItemId] = useState(null);
             const [dragOverItemId, setDragOverItemId] = useState(null);
 
@@ -203,10 +204,9 @@
                 setCurrentPage(1);
             }, [currentCategory, searchTerm, appPriceFilter, appTypeFilter]);
 
-            // 【変更】並び替え可能な条件（検索ワードが空の時であれば、どのタブ・フィルターでも移動可能にする）
             const canSort = searchTerm === '';
 
-            // ドラッグ＆ドロップのハンドラー（IDを使って大元のデータを正確に入れ替える）
+            // ドラッグ＆ドロップのハンドラー
             const handleDragStart = (e, id) => {
                 setDragItemId(id);
                 e.dataTransfer.effectAllowed = "move";
@@ -232,7 +232,6 @@
                 setData(prevData => {
                     const currentItems = mode === 'password' ? [...prevData.passwords] : [...prevData.apps];
                     
-                    // IDから元の配列内の正確な位置を探し出す
                     const fromIndex = currentItems.findIndex(item => item.id === dragItemId);
                     const toIndex = currentItems.findIndex(item => item.id === dragOverItemId);
 
@@ -250,7 +249,6 @@
                 handleDragEnd();
             };
 
-            // ドラッグ関連のプロパティを生成する関数
             const createDragProps = (item) => {
                 return {
                     onDragStart: (e) => handleDragStart(e, item.id),
@@ -369,7 +367,7 @@
                 }
 
                 const csvString = generateCSV(targetData, columns);
-                const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excelで文字化けしないためのBOM
+                const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
                 const blob = new Blob([bom, csvString], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -407,7 +405,7 @@
                             } else {
                                 return {
                                     id: row[0], title: row[1] || '', category: row[2] || 'planning', priceType: row[3] || 'free',
-                                    appType: row[4] || 'sales', // 新規作成時はデフォルトで sales になるよう設定
+                                    appType: row[4] || 'sales',
                                     localHtml: row[5] || '', githubUrl: row[6] || '', workersUrl: row[7] || '',
                                     apiInfo: row[8] || '', faviconOgpSet: row[9] === 'TRUE', stripeUrl: row[10] || '', stripeThanksUrl: row[11] || '',
                                     monthlyPrice: row[12] || '', buyoutPrice: row[13] || '', appPassword: row[14] || '', concept: row[15] || '', memo: row[16] || '',
@@ -455,7 +453,6 @@
                 e.target.value = '';
             };
 
-            // --- データの保存（パスワード） ---
             const handleSavePassword = (formData) => {
                 if (editingItem) {
                     const updatedPasswords = data.passwords.map(item => item.id === editingItem.id ? { ...formData, id: item.id, updatedAt: new Date().toISOString() } : item);
@@ -525,7 +522,6 @@
                 }
             };
 
-            // 全データのフィルタリング
             const displayItems = useMemo(() => {
                 const sourceItems = mode === 'password' ? data.passwords : data.apps;
                 
@@ -554,7 +550,6 @@
                             if (appPriceFilter === 'free') {
                                 matchAppPrice = itemPriceType === 'free';
                             } else if (appPriceFilter === 'paid') {
-                                // 'paid' で始まるものはすべて有料として扱う（過去の 'paid' も含む）
                                 matchAppPrice = itemPriceType.startsWith('paid');
                             } else {
                                 matchAppPrice = itemPriceType === appPriceFilter;
@@ -570,7 +565,6 @@
                 });
             }, [data, mode, searchTerm, currentCategory, appPriceFilter, appTypeFilter]);
 
-            // 総ページ数の計算
             const totalPages = Math.max(1, Math.ceil(displayItems.length / ITEMS_PER_PAGE));
 
             useEffect(() => {
@@ -598,7 +592,6 @@
                             </div>
                             
                             <div className="flex flex-col items-end space-y-2 w-full md:w-auto">
-                                {/* Excel(CSV) 一括出力・取込機能 */}
                                 <div className="flex space-x-2 justify-center md:justify-end w-full">
                                     <button onClick={handleExportCSV} className="flex items-center text-sm px-4 py-2 bg-spc-navy text-white rounded-md hover:bg-blue-900 transition-colors shadow-md font-bold" title="現在のタブをExcel(CSV)で出力して一括編集">
                                         <IconFileText /><span className="ml-1.5">Excel(CSV) 出力</span>
@@ -611,7 +604,6 @@
                             </div>
                         </div>
 
-                        {/* モード切替タブと検索バー */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
                             <div className="flex p-1 bg-white/50 border border-gray-200 rounded-xl shadow-inner w-full md:w-auto md:min-w-[320px]">
                                 <button
@@ -656,7 +648,6 @@
                             </div>
                         </div>
 
-                        {/* カテゴリフィルタ */}
                         <div className="flex overflow-x-auto hide-scrollbar w-full space-x-2 pb-2 mb-2">
                             {currentCategories.map(cat => (
                                 <button
@@ -673,7 +664,6 @@
                             ))}
                         </div>
 
-                        {/* アプリ管理モード時のみ表示されるサブフィルター */}
                         {mode === 'app' && (
                             <div className="flex flex-col space-y-3 mb-4 animate-fade-in ml-1">
                                 <div className="flex flex-wrap gap-2">
@@ -721,7 +711,6 @@
                             </div>
                         )}
 
-                        {/* ページネーション */}
                         {totalPages > 1 && (
                             <div className="flex justify-center items-center space-x-4 mb-4 animate-fade-in">
                                 <button
@@ -1005,21 +994,20 @@
                     case 'paid-note-stripe': return { label: '💎 有料(note+Stripe)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
                     case 'paid-note': return { label: '💎 有料(note)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
                     case 'paid-web': return { label: '💎 有料(Web)', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                    case 'paid': return { label: '💎 有料', color: 'bg-blue-50 text-blue-700 border-blue-200' }; // 過去データ互換用
+                    case 'paid': return { label: '💎 有料', color: 'bg-blue-50 text-blue-700 border-blue-200' }; 
                     case 'free':
                     default: return { label: '🆓 無料', color: 'bg-green-50 text-green-700 border-green-200' };
                 }
             };
             const priceTypeInfo = getPriceTypeInfo(item.priceType);
 
-            // 【新規追加】種類（販売用/お客様専用/PB）のバッジ情報
             const getAppTypeInfo = (type) => {
                 switch(type) {
                     case 'sales': return { label: '🛒 販売用', color: 'bg-pink-50 text-pink-700 border-pink-200' };
                     case 'client': return { label: '🤝 お客様専用', color: 'bg-teal-50 text-teal-700 border-teal-200' };
                     case 'private': return { label: '⛳️ PB用', color: 'bg-orange-50 text-orange-700 border-orange-200' };
                     case 'work': 
-                    default: return { label: '💼 仕事(旧)', color: 'bg-gray-50 text-gray-700 border-gray-200' }; // 過去データ互換用
+                    default: return { label: '💼 仕事(旧)', color: 'bg-gray-50 text-gray-700 border-gray-200' }; 
                 }
             };
             const appTypeInfo = getAppTypeInfo(item.appType || 'work');
@@ -1218,20 +1206,11 @@
                                 </div>
                             )}
 
-                            {/* サムネイル画像表示 */}
-                            {item.thumbnail && (
-                                <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white p-2">
-                                    <img src={item.thumbnail} alt="サムネイル" className="w-full h-auto object-contain max-h-48 mx-auto" />
-                                </div>
-                            )}
-
-                            {/* SNS投稿状況 */}
                             <div className="mt-4 bg-white p-3.5 rounded-lg border border-gray-100 shadow-sm">
                                 <div className="text-xs font-bold text-gray-600 mb-2 flex items-center">📢 SNS連携・投稿状況</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {['note', 'base', 'threads', 'x', 'facebook', 'instagram'].map(platform => {
                                         const platformNames = { note: 'note', base: 'base', threads: 'Threads', x: 'X', facebook: 'Facebook', instagram: 'Instagram' };
-                                        // データがない場合は「未設定」の初期値をセットする
                                         const postData = (item.socialPosts && item.socialPosts[platform]) || { date: '', posted: false, url: '' };
                                         
                                         return (
@@ -1248,7 +1227,6 @@
                                                         <span className="text-gray-400">未</span>
                                                     )}
                                                 </div>
-                                                {/* noteとbaseのみURLを表示 */}
                                                 {(platform === 'note' || platform === 'base') && postData.url && (
                                                     <div className="mt-1 pt-1 border-t border-gray-200">
                                                         <a href={postData.url.startsWith('http') ? postData.url : `https://${postData.url}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-spc-cyan hover:text-blue-600 transition-colors flex items-center overflow-hidden">
@@ -1347,7 +1325,7 @@
             const [formData, setFormData] = useState({
                 title: '', category: 'active', 
                 priceType: 'free', 
-                appType: 'sales', // 【変更】新規追加のデフォルトは「販売用」に
+                appType: 'sales',
                 localHtml: '', githubUrl: '', workersUrl: '', apiInfo: '', 
                 faviconOgpSet: false,
                 stripeUrl: '', 
@@ -1374,7 +1352,7 @@
                     setFormData({
                         ...item,
                         priceType: item.priceType || 'free', 
-                        appType: item.appType || 'work', // 【維持】過去のデータはそのまま読み込む
+                        appType: item.appType || 'work',
                         faviconOgpSet: item.faviconOgpSet || false,
                         appPassword: item.appPassword || '', 
                         stripeThanksUrl: item.stripeThanksUrl || '', 
@@ -1550,7 +1528,6 @@
                                             />
                                             <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ PB用</span>
                                         </label>
-                                        {/* 過去データ互換用 */}
                                         {formData.appType === 'work' && (
                                             <label className="flex items-center cursor-pointer">
                                                 <input 
