@@ -139,7 +139,7 @@
             // アプリ管理用の有料/無料 絞り込みフィルター
             const [appPriceFilter, setAppPriceFilter] = useState('all'); 
             
-            // アプリ管理用の種類（販売用/お客様専用/PB）絞り込みフィルター
+            // アプリ管理用の種類（販売用/パートナー用/お客様用/プライベート用）絞り込みフィルター
             const [appTypeFilter, setAppTypeFilter] = useState('all'); 
 
             // カードの展開状態をすべて閉じるためのトリガー
@@ -336,7 +336,7 @@
                         { label: 'タイトル', value: i => i.title },
                         { label: 'ステータス', value: i => i.category },
                         { label: '提供形態(free/paid...)', value: i => i.priceType || 'free' },
-                        { label: '種類(sales/client/private/work)', value: i => i.appType || 'work' },
+                        { label: '種類(sales/partner/client/private/work)', value: i => i.appType || 'work' },
                         { label: 'ローカルHTMLパス', value: i => i.localHtml },
                         { label: 'GitHub URL', value: i => i.githubUrl },
                         { label: 'Workers URL', value: i => i.workersUrl },
@@ -696,11 +696,14 @@
                                     <button onClick={() => setAppTypeFilter('sales')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'sales' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
                                         🛒 販売用
                                     </button>
+                                    <button onClick={() => setAppTypeFilter('partner')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'partner' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🤝 パートナー用
+                                    </button>
                                     <button onClick={() => setAppTypeFilter('client')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'client' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        🤝 お客様専用
+                                        👤 お客様用
                                     </button>
                                     <button onClick={() => setAppTypeFilter('private')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'private' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        ⛳️ PB用
+                                        ⛳️ プライベート用
                                     </button>
                                     {data.apps.some(app => (app.appType || 'work') === 'work') && (
                                         <button onClick={() => setAppTypeFilter('work')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'work' ? 'bg-gray-500 text-white border-gray-500 shadow-sm' : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}`}>
@@ -1004,8 +1007,9 @@
             const getAppTypeInfo = (type) => {
                 switch(type) {
                     case 'sales': return { label: '🛒 販売用', color: 'bg-pink-50 text-pink-700 border-pink-200' };
-                    case 'client': return { label: '🤝 お客様専用', color: 'bg-teal-50 text-teal-700 border-teal-200' };
-                    case 'private': return { label: '⛳️ PB用', color: 'bg-orange-50 text-orange-700 border-orange-200' };
+                    case 'partner': return { label: '🤝 パートナー用', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                    case 'client': return { label: '👤 お客様用', color: 'bg-teal-50 text-teal-700 border-teal-200' };
+                    case 'private': return { label: '⛳️ プライベート用', color: 'bg-orange-50 text-orange-700 border-orange-200' };
                     case 'work': 
                     default: return { label: '💼 仕事(旧)', color: 'bg-gray-50 text-gray-700 border-gray-200' }; 
                 }
@@ -1206,11 +1210,20 @@
                                 </div>
                             )}
 
+                            {/* サムネイル画像表示 */}
+                            {item.thumbnail && (
+                                <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white p-2">
+                                    <img src={item.thumbnail} alt="サムネイル" className="w-full h-auto object-contain max-h-48 mx-auto" />
+                                </div>
+                            )}
+
+                            {/* SNS投稿状況 */}
                             <div className="mt-4 bg-white p-3.5 rounded-lg border border-gray-100 shadow-sm">
                                 <div className="text-xs font-bold text-gray-600 mb-2 flex items-center">📢 SNS連携・投稿状況</div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                     {['note', 'base', 'threads', 'x', 'facebook', 'instagram'].map(platform => {
                                         const platformNames = { note: 'note', base: 'base', threads: 'Threads', x: 'X', facebook: 'Facebook', instagram: 'Instagram' };
+                                        // データがない場合は「未設定」の初期値をセットする
                                         const postData = (item.socialPosts && item.socialPosts[platform]) || { date: '', posted: false, url: '' };
                                         
                                         return (
@@ -1510,12 +1523,23 @@
                                             <input 
                                                 type="radio" 
                                                 name="appType" 
+                                                value="partner" 
+                                                checked={formData.appType === 'partner'} 
+                                                onChange={handleChange} 
+                                                className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
+                                            />
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🤝 パートナー用</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input 
+                                                type="radio" 
+                                                name="appType" 
                                                 value="client" 
                                                 checked={formData.appType === 'client'} 
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🤝 お客様専用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">👤 お客様用</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input 
@@ -1526,7 +1550,7 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ PB用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ プライベート用</span>
                                         </label>
                                         {formData.appType === 'work' && (
                                             <label className="flex items-center cursor-pointer">
