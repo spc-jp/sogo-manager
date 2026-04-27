@@ -363,7 +363,8 @@
                         { label: 'facebook日付', value: i => i.socialPosts?.facebook?.date || '' },
                         { label: 'facebook投稿済(TRUE/FALSE)', value: i => i.socialPosts?.facebook?.posted ? 'TRUE' : 'FALSE' },
                         { label: 'instagram日付', value: i => i.socialPosts?.instagram?.date || '' },
-                        { label: 'instagram投稿済(TRUE/FALSE)', value: i => i.socialPosts?.instagram?.posted ? 'TRUE' : 'FALSE' }
+                        { label: 'instagram投稿済(TRUE/FALSE)', value: i => i.socialPosts?.instagram?.posted ? 'TRUE' : 'FALSE' },
+                        { label: 'ターゲット', value: i => i.target || '' }
                     ];
                 }
 
@@ -417,7 +418,8 @@
                                         x: { date: row[25]||'', posted: row[26]==='TRUE' },
                                         facebook: { date: row[27]||'', posted: row[28]==='TRUE' },
                                         instagram: { date: row[29]||'', posted: row[30]==='TRUE' }
-                                    }
+                                    },
+                                    target: row[31] || '' // 既存のCSVの列がずれないように一番最後に追加
                                 };
                             }
                         };
@@ -1206,9 +1208,16 @@
                                 )}
                             </div>
 
+                            {item.target && (
+                                <div className="mt-4 text-sm text-gray-700 bg-orange-50 p-3.5 rounded-lg border border-orange-200 shadow-sm whitespace-pre-wrap leading-relaxed">
+                                    <div className="text-xs font-bold text-orange-600 mb-1 flex items-center">🎯 ターゲット</div>
+                                    {item.target}
+                                </div>
+                            )}
+
                             {item.concept && (
                                 <div className="mt-4 text-sm text-gray-700 bg-pink-50 p-3.5 rounded-lg border border-pink-200 shadow-sm whitespace-pre-wrap leading-relaxed">
-                                    <div className="text-xs font-bold text-pink-600 mb-1 flex items-center">💡 アプリコンセプト</div>
+                                    <div className="text-xs font-bold text-pink-600 mb-1 flex items-center">💡 アプリの概要・強み</div>
                                     {item.concept}
                                 </div>
                             )}
@@ -1355,6 +1364,7 @@
                 stripeThanksUrl: '', 
                 monthlyPrice: '', buyoutPrice: '', 
                 appPassword: '', 
+                target: '',
                 concept: '',
                 memo: '',
                 socialPosts: defaultSocialPosts
@@ -1379,6 +1389,7 @@
                         faviconOgpSet: item.faviconOgpSet || false,
                         appPassword: item.appPassword || '', 
                         stripeThanksUrl: item.stripeThanksUrl || '', 
+                        target: item.target || '',
                         concept: item.concept || '',
                         socialPosts: mergedSocialPosts
                     });
@@ -1659,8 +1670,13 @@
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">💡 アプリコンセプト</label>
-                                <textarea name="concept" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="誰のどんな課題を解決するアプリか等" value={formData.concept || ''} onChange={handleChange}></textarea>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">🎯 ターゲット</label>
+                                <textarea name="target" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="誰に売るのか、売ってもらいたいのか等" value={formData.target || ''} onChange={handleChange}></textarea>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">💡 アプリの概要・強み</label>
+                                <textarea name="concept" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="アプリの特徴や強みなど" value={formData.concept || ''} onChange={handleChange}></textarea>
                             </div>
 
                             <div>
