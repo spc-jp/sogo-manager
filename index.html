@@ -706,16 +706,16 @@
                                         すべて
                                     </button>
                                     <button onClick={() => setAppTypeFilter('sales')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'sales' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        🛒 販売用
+                                        🛒 デジタル販売
                                     </button>
                                     <button onClick={() => setAppTypeFilter('partner')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'partner' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        🤝 パートナー用
+                                        🤝 パートナー
                                     </button>
                                     <button onClick={() => setAppTypeFilter('client')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'client' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        👤 お客様用
+                                        👤 お客様
                                     </button>
                                     <button onClick={() => setAppTypeFilter('private')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'private' ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
-                                        ⛳️ プライベート用
+                                        ⛳️ プライベート
                                     </button>
                                     {data.apps.some(app => (app.appType || 'work') === 'work') && (
                                         <button onClick={() => setAppTypeFilter('work')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${appTypeFilter === 'work' ? 'bg-gray-500 text-white border-gray-500 shadow-sm' : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'}`}>
@@ -1018,10 +1018,10 @@
 
             const getAppTypeInfo = (type) => {
                 switch(type) {
-                    case 'sales': return { label: '🛒 販売用', color: 'bg-pink-50 text-pink-700 border-pink-200' };
-                    case 'partner': return { label: '🤝 パートナー用', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                    case 'client': return { label: '👤 お客様用', color: 'bg-teal-50 text-teal-700 border-teal-200' };
-                    case 'private': return { label: '⛳️ プライベート用', color: 'bg-orange-50 text-orange-700 border-orange-200' };
+                    case 'sales': return { label: '🛒 デジタル販売', color: 'bg-pink-50 text-pink-700 border-pink-200' };
+                    case 'partner': return { label: '🤝 パートナー', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                    case 'client': return { label: '👤 お客様', color: 'bg-teal-50 text-teal-700 border-teal-200' };
+                    case 'private': return { label: '⛳️ プライベート', color: 'bg-orange-50 text-orange-700 border-orange-200' };
                     case 'work': 
                     default: return { label: '💼 仕事(旧)', color: 'bg-gray-50 text-gray-700 border-gray-200' }; 
                 }
@@ -1538,7 +1538,7 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🛒 販売用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🛒 デジタル販売</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input 
@@ -1549,7 +1549,7 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🤝 パートナー用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">🤝 パートナー</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input 
@@ -1560,7 +1560,7 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">👤 お客様用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">👤 お客様</span>
                                         </label>
                                         <label className="flex items-center cursor-pointer">
                                             <input 
@@ -1571,7 +1571,7 @@
                                                 onChange={handleChange} 
                                                 className="text-spc-cyan focus:ring-spc-cyan h-4 w-4" 
                                             />
-                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ プライベート用</span>
+                                            <span className="ml-1.5 text-sm text-gray-700 font-medium">⛳️ プライベート</span>
                                         </label>
                                         {formData.appType === 'work' && (
                                             <label className="flex items-center cursor-pointer">
