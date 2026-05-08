@@ -143,6 +143,12 @@
             // アプリ管理用の種類（販売用/パートナー用/お客様用/プライベート用）絞り込みフィルター
             const [appTypeFilter, setAppTypeFilter] = useState('all'); 
 
+            // アプリ管理用の月額/買取 絞り込みフィルター
+            const [paymentFilter, setPaymentFilter] = useState('all');
+
+            // アプリ管理用のAPI有無 絞り込みフィルター
+            const [apiFilter, setApiFilter] = useState('all');
+
             // カードの展開状態をすべて閉じるためのトリガー
             const [resetTrigger, setResetTrigger] = useState(0);
 
@@ -198,12 +204,14 @@
                 setCurrentPage(1);
                 setAppPriceFilter('all');
                 setAppTypeFilter('all');
+                setPaymentFilter('all');
+                setApiFilter('all');
             }, [mode]);
 
             // カテゴリや検索、フィルターが変わったらページを1に戻す
             useEffect(() => {
                 setCurrentPage(1);
-            }, [currentCategory, searchTerm, appPriceFilter, appTypeFilter]);
+            }, [currentCategory, searchTerm, appPriceFilter, appTypeFilter, paymentFilter, apiFilter]);
 
             const canSort = searchTerm === '';
 
@@ -535,6 +543,8 @@
                     let matchSearch = false;
                     let matchAppPrice = true; 
                     let matchAppType = true;
+                    let matchPayment = true;
+                    let matchApi = true;
 
                     if (mode === 'password') {
                         matchSearch = 
@@ -563,10 +573,25 @@
                             const itemAppType = item.appType || 'work';
                             matchAppType = itemAppType === appTypeFilter;
                         }
+
+                        if (paymentFilter !== 'all') {
+                            const hasMonthly = item.monthlyPrice && item.monthlyPrice.trim() !== '';
+                            const hasBuyout = item.buyoutPrice && item.buyoutPrice.trim() !== '';
+                            
+                            if (paymentFilter === 'monthly') matchPayment = hasMonthly;
+                            if (paymentFilter === 'buyout') matchPayment = hasBuyout;
+                            if (paymentFilter === 'both') matchPayment = hasMonthly && hasBuyout;
+                        }
+
+                        if (apiFilter !== 'all') {
+                            const hasApi = item.apiInfo && item.apiInfo.trim() !== '';
+                            if (apiFilter === 'hasApi') matchApi = hasApi;
+                            if (apiFilter === 'noApi') matchApi = !hasApi;
+                        }
                     }
-                    return matchCategory && matchSearch && matchAppPrice && matchAppType;
+                    return matchCategory && matchSearch && matchAppPrice && matchAppType && matchPayment && matchApi;
                 });
-            }, [data, mode, searchTerm, currentCategory, appPriceFilter, appTypeFilter]);
+            }, [data, mode, searchTerm, currentCategory, appPriceFilter, appTypeFilter, paymentFilter, apiFilter]);
 
             const totalPages = Math.max(1, Math.ceil(displayItems.length / ITEMS_PER_PAGE));
 
@@ -723,6 +748,33 @@
                                         </button>
                                     )}
                                 </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => setPaymentFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${paymentFilter === 'all' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        すべて
+                                    </button>
+                                    <button onClick={() => setPaymentFilter('monthly')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${paymentFilter === 'monthly' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        💴 月額あり
+                                    </button>
+                                    <button onClick={() => setPaymentFilter('buyout')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${paymentFilter === 'buyout' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        💰 買取あり
+                                    </button>
+                                    <button onClick={() => setPaymentFilter('both')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${paymentFilter === 'both' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        ⚖️ 両方あり
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => setApiFilter('all')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${apiFilter === 'all' ? 'bg-teal-500 text-white border-teal-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        すべて
+                                    </button>
+                                    <button onClick={() => setApiFilter('hasApi')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${apiFilter === 'hasApi' ? 'bg-teal-500 text-white border-teal-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🔑 APIあり
+                                    </button>
+                                    <button onClick={() => setApiFilter('noApi')} className={`px-3 py-1 text-xs rounded-full border transition-colors ${apiFilter === 'noApi' ? 'bg-teal-500 text-white border-teal-500 shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                                        🚫 APIなし
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -761,7 +813,7 @@
                                 </span>
                                 <span className="text-xs font-medium text-gray-500 ml-1">件表示</span>
                             </div>
-                            {(searchTerm || currentCategory !== 'all' || (mode === 'app' && (appPriceFilter !== 'all' || appTypeFilter !== 'all'))) && (
+                            {(searchTerm || currentCategory !== 'all' || (mode === 'app' && (appPriceFilter !== 'all' || appTypeFilter !== 'all' || paymentFilter !== 'all' || apiFilter !== 'all'))) && (
                                 <div className="ml-3 pl-3 border-l border-gray-300 text-xs font-medium text-gray-400">
                                     全 {mode === 'password' ? data.passwords.length : data.apps.length} 件
                                 </div>
