@@ -344,7 +344,7 @@
                         { label: 'GitHub URL', value: i => i.githubUrl },
                         { label: 'pages.dev URL', value: i => i.workersUrl },
                         { label: 'APIキー・環境変数', value: i => i.apiInfo },
-                        { label: 'FaviconOGP設定済(TRUE/FALSE)', value: i => i.faviconOgpSet ? 'TRUE' : 'FALSE' },
+                        { label: 'Favicon設定済(TRUE/FALSE)', value: i => (i.faviconSet !== undefined ? i.faviconSet : i.faviconOgpSet) ? 'TRUE' : 'FALSE' },
                         { label: '月額Stripe決済URL', value: i => i.stripeUrl },
                         { label: '月額StripeサンクスURL', value: i => i.stripeThanksUrl },
                         { label: '月額価格', value: i => i.monthlyPrice },
@@ -378,7 +378,8 @@
                             if (i.aiTools.chatgpt) tools.push('ChatGPT');
                             if (i.aiTools.other) tools.push('他');
                             return tools.join(',');
-                        }}
+                        }},
+                        { label: 'OGP設定済(TRUE/FALSE)', value: i => (i.ogpSet !== undefined ? i.ogpSet : i.faviconOgpSet) ? 'TRUE' : 'FALSE' }
                     ];
                 }
 
@@ -424,7 +425,9 @@
                                     id: row[0], title: row[1] || '', category: row[2] || 'planning', priceType: row[3] || 'free',
                                     appType: row[4] || 'sales',
                                     localHtml: row[5] || '', githubUrl: row[6] || '', workersUrl: row[7] || '',
-                                    apiInfo: row[8] || '', faviconOgpSet: row[9] === 'TRUE', stripeUrl: row[10] || '', stripeThanksUrl: row[11] || '',
+                                    apiInfo: row[8] || '', 
+                                    faviconSet: row[9] === 'TRUE', 
+                                    stripeUrl: row[10] || '', stripeThanksUrl: row[11] || '',
                                     monthlyPrice: row[12] || '', buyoutPrice: row[13] || '', appPassword: row[14] || '', concept: row[15] || '', memo: row[16] || '',
                                     socialPosts: {
                                         note: { date: row[17]||'', posted: row[18]==='TRUE', url: row[19]||'' },
@@ -443,7 +446,8 @@
                                         gemini: aiToolsStr.includes('Gemini'),
                                         chatgpt: aiToolsStr.includes('ChatGPT'),
                                         other: aiToolsStr.includes('他')
-                                    }
+                                    },
+                                    ogpSet: row[36] !== undefined ? row[36] === 'TRUE' : (row[9] === 'TRUE')
                                 };
                             }
                         };
@@ -1229,9 +1233,18 @@
                                     </div>
                                 )}
 
-                                {item.faviconOgpSet && (
-                                    <div className="border-t border-gray-100 pt-3 flex items-center text-sm font-bold text-green-600">
-                                        <IconCheck /> <span className="ml-1">favicon・OGP設定済み</span>
+                                {(item.faviconSet || item.ogpSet || item.faviconOgpSet) && (
+                                    <div className="border-t border-gray-100 pt-3 flex flex-wrap gap-4 text-sm font-bold text-green-600">
+                                        {(item.faviconSet !== undefined ? item.faviconSet : item.faviconOgpSet) && (
+                                            <div className="flex items-center">
+                                                <IconCheck /> <span className="ml-1">favicon設定済み</span>
+                                            </div>
+                                        )}
+                                        {(item.ogpSet !== undefined ? item.ogpSet : item.faviconOgpSet) && (
+                                            <div className="flex items-center">
+                                                <IconCheck /> <span className="ml-1">OGP設定済み</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -1490,7 +1503,8 @@
                 priceType: 'free', 
                 appType: 'sales',
                 localHtml: '', githubUrl: '', workersUrl: '', apiInfo: '', 
-                faviconOgpSet: false,
+                faviconSet: false,
+                ogpSet: false,
                 stripeUrl: '', 
                 stripeThanksUrl: '', 
                 monthlyPrice: '', buyoutPrice: '', 
@@ -1521,7 +1535,8 @@
                         ...item,
                         priceType: item.priceType || 'free', 
                         appType: item.appType || 'work',
-                        faviconOgpSet: item.faviconOgpSet || false,
+                        faviconSet: item.faviconSet !== undefined ? item.faviconSet : (item.faviconOgpSet || false),
+                        ogpSet: item.ogpSet !== undefined ? item.ogpSet : (item.faviconOgpSet || false),
                         appPassword: item.appPassword || '', 
                         buyoutPassword: item.buyoutPassword || '', 
                         stripeThanksUrl: item.stripeThanksUrl || '', 
@@ -1708,10 +1723,14 @@
                                 <textarea name="apiInfo" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 font-mono text-sm outline-none bg-gray-50" placeholder="OpenAI_API_KEY=sk-..." value={formData.apiInfo} onChange={handleChange}></textarea>
                             </div>
 
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center">
-                                <label className="flex items-center cursor-pointer w-full">
-                                    <input type="checkbox" name="faviconOgpSet" checked={formData.faviconOgpSet} onChange={(e) => setFormData({...formData, faviconOgpSet: e.target.checked})} className="text-spc-cyan focus:ring-spc-cyan h-4 w-4 rounded" />
-                                    <span className="ml-2 text-sm text-gray-700 font-medium">🏷️ favicon・OGP設定済み</span>
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 flex items-center space-x-6">
+                                <label className="flex items-center cursor-pointer">
+                                    <input type="checkbox" name="faviconSet" checked={formData.faviconSet} onChange={(e) => setFormData({...formData, faviconSet: e.target.checked})} className="text-spc-cyan focus:ring-spc-cyan h-4 w-4 rounded" />
+                                    <span className="ml-2 text-sm text-gray-700 font-medium">🏷️ favicon設定済み</span>
+                                </label>
+                                <label className="flex items-center cursor-pointer">
+                                    <input type="checkbox" name="ogpSet" checked={formData.ogpSet} onChange={(e) => setFormData({...formData, ogpSet: e.target.checked})} className="text-spc-cyan focus:ring-spc-cyan h-4 w-4 rounded" />
+                                    <span className="ml-2 text-sm text-gray-700 font-medium">🖼️ OGP設定済み</span>
                                 </label>
                             </div>
 
