@@ -350,8 +350,8 @@
                         { label: '月額価格', value: i => i.monthlyPrice },
                         { label: '買取価格', value: i => i.buyoutPrice },
                         { label: '月額用パスワード', value: i => i.appPassword },
-                        { label: 'アプリコンセプト', value: i => i.concept },
-                        { label: '開発メモ・概要', value: i => i.memo },
+                        { label: '解決できる悩み・提供できる価値', value: i => i.concept },
+                        { label: 'アプリ概要 60文字、170文字', value: i => i.memo },
                         { label: 'note日付', value: i => i.socialPosts?.note?.date || '' },
                         { label: 'note投稿済(TRUE/FALSE)', value: i => i.socialPosts?.note?.posted ? 'TRUE' : 'FALSE' },
                         { label: 'noteURL', value: i => i.socialPosts?.note?.url || '' },
@@ -1356,17 +1356,17 @@
                                 </div>
                             )}
 
+                            {item.memo && (
+                                <div className="mt-4 text-sm text-gray-700 bg-blue-50 p-3.5 rounded-lg border border-blue-200 shadow-sm whitespace-pre-wrap leading-relaxed">
+                                    <div className="text-xs font-bold text-blue-600 mb-1 flex items-center">📝 アプリ概要 60文字、170文字</div>
+                                    {item.memo}
+                                </div>
+                            )}
+
                             {item.concept && (
                                 <div className="mt-4 text-sm text-gray-700 bg-pink-50 p-3.5 rounded-lg border border-pink-200 shadow-sm whitespace-pre-wrap leading-relaxed">
                                     <div className="text-xs font-bold text-pink-600 mb-1 flex items-center">💡 解決できる悩み・提供できる価値</div>
                                     {item.concept}
-                                </div>
-                            )}
-
-                            {item.memo && (
-                                <div className="mt-4 text-sm text-gray-700 bg-blue-50 p-3.5 rounded-lg border border-blue-200 shadow-sm whitespace-pre-wrap leading-relaxed">
-                                    <div className="text-xs font-bold text-blue-600 mb-1 flex items-center">開発メモ・概要</div>
-                                    {item.memo}
                                 </div>
                             )}
 
@@ -1784,13 +1784,13 @@
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">💡 解決できる悩み・提供できる価値</label>
-                                <textarea name="concept" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="どのような悩みを解決し、どんな価値を提供するか" value={formData.concept || ''} onChange={handleChange}></textarea>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">📝 アプリ概要 60文字、170文字</label>
+                                <textarea name="memo" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="アプリの概要を60文字や170文字程度で記載" value={formData.memo} onChange={handleChange}></textarea>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">📝 開発メモ・概要</label>
-                                <textarea name="memo" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="使用しているライブラリや次のタスクなど" value={formData.memo} onChange={handleChange}></textarea>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">💡 解決できる悩み・提供できる価値</label>
+                                <textarea name="concept" rows="2" className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none" placeholder="どのような悩みを解決し、どんな価値を提供するか" value={formData.concept || ''} onChange={handleChange}></textarea>
                             </div>
 
                             <div className="pt-2">
